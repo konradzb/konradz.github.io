@@ -5,21 +5,22 @@ tags: [soopr, config]
 
 # DLL Injection: A Comprehensive Security Perspective
 
-## Introduction
+I created this short paper to sumerize my knowledge about DLL and DLL Injection in one place. Its much easier to exploit something from time to time when you don't have to remind every detail again and agian :). There is no fancy stuff, the idea was to create geenral guide to help myself when I came across DLL Injection in the future. For example on Windows we have User32.dll, which exports functions related to user interface. 
 
-Dynamic Link Libraries (DLLs) are fundamental to the Windows operating system, serving as shared repositories of code and functionality accessible to multiple applications. However, their architecture and loading mechanisms present both opportunities and risks. DLL Injection has emerged as both a powerful tool for legitimate development and a sophisticated attack vector exploited by threat actors worldwide. This article explores the technical intricacies of DLLs, injection mechanisms, detection methodologies, and advanced evasion techniques including DLL sideloading and DLL proxying.
+Applications can be devided into multiple modules, each module have its seperate DLL file, which is loaded seperatly when main application (.exe file) requires it. It is more eficient for system to maintain mudular application, but I think more important is fact, that is also easier to maintain applications code when its devided into modules.
 
----
+## 1. What is a DLL?
 
-## 1. What is a DLL: Main Functions and Architecture
+As we can read on (oficial microsoft page)[https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/dynamic-link-library#more-information] - "a DLL is a library that contains code and data that can be used by more than one program at the same time". It's more eficient to place your code in DLL when you know it will be used in multiple places. Unlike static libraries that are embedded into an executable at compile time, DLL will be loaded when particular function is called inside the code.
 
-### 1.1 Definition and Core Concepts
-
-A **Dynamic Link Library (DLL)** is a file format on Windows that contains code, data, and resources that multiple programs can use simultaneously. Unlike static libraries that are embedded into an executable at compile time, DLLs are loaded into memory at runtime, providing a level of flexibility and modularity essential for modern Windows software architecture.
-
-The primary function of a DLL is to enable **code reuse and modularity**. Rather than embedding identical functionality into every executable, developers can package common operations into a single DLL file that multiple applications reference and execute. This approach saves system memory, reduces storage requirements, and facilitates easier maintenance and updates.
 
 ### 1.2 Structure and Portable Executable (PE) Format
+
+Structure of Portable Executable (PE) is quite complicated and I am not going to copy the inforamtion from oficial microsoft website, you can find (more information there)[https://learn.microsoft.com/en-us/windows/win32/debug/pe-format]. 
+Great visualization was done in the picture below, where simple.exe was described, however the structure is similar to the DLL file 
+
+https://github.com/corkami/pics/blob/master/binary/pe101/pe101.png
+
 
 DLLs are structured as Portable Executable (PE) files, similar to `.exe` files but with distinct characteristics. The PE format consists of several critical components:
 
@@ -575,8 +576,15 @@ As threats evolve, continued education on these mechanisms and adoption of advan
 
 ## References
 
-- Microsoft Learn: Dynamic-Link Library Best Practices
+- [What is a DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/dynamic-link-library)
+- [PE Format - documentation](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format)
+- [PE Format - picture](https://github.com/corkami/pics/blob/master/binary/pe101/pe101.png)
+- [Dive into PE Format](https://0xrick.github.io/win-internals/pe1/)
 - MITRE ATT&CK: T1055.001 - Dynamic-link Library Injection
 - LOLBAS Project: Living Off The Land Binaries and Scripts
 - Sysinternals Tools Documentation: Process Monitor and Process Explorer
 - Windows PE Format Specifications and Loader Internals
+
+
+### TODO:
+- what is DOS mode?
