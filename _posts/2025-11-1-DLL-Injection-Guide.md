@@ -3,6 +3,7 @@ layout: post
 tags: [soopr, config]
 ---
 
+
 # DLL Injection: A Comprehensive Security Perspective
 
 I created this short paper to sumerize my knowledge about DLL and DLL Injection in one place. Its much easier to exploit something from time to time when you don't have to remind every detail again and agian :). There is no fancy stuff, the idea was to create geenral guide to help myself when I came across DLL Injection in the future. For example on Windows we have User32.dll, which exports functions related to user interface. 
