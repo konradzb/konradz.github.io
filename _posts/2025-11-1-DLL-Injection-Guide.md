@@ -36,7 +36,18 @@ Understading of how the PE format is build and works is whole other topic. 0xRic
 **Detecting Missing DLLs**:
 Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is function for filtering events, to reduce the number of displayed rows. 
 
-As an example, we will inwestigate service that is running with SYSTEM privileges.
+As an example, we will inwestigate service that is running with SYSTEM privileges. It is a PoC service, so only importat thing it does, it tries to load DLL using `LoadLibraryA" every 5 seconds.
+```
+while (true) {
+    HMODULE hModule = LoadLibraryA("vulnerable.dll");
+
+    Sleep(5000);
+}
+```
+Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary we want to see:
+
+
+##### Search order
 
 #TODO Example Create example in the virtual machine, to the screnshoots etc.
 
