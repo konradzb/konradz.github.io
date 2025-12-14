@@ -6,14 +6,13 @@ tags: [soopr, config]
 
 # DLL Injection: A Comprehensive Security Perspective
 
-I created this short paper to sumerize my knowledge about DLL and DLL Injection in one place. Its much easier to exploit something from time to time when you don't have to remind every detail again and agian :). There is no fancy stuff, the idea was to create geenral guide to help myself when I came across DLL Injection in the future. For example on Windows we have User32.dll, which exports functions related to user interface. 
-
-Applications can be devided into multiple modules, each module have its seperate DLL file, which is loaded seperatly when main application (.exe file) requires it. It is more eficient for system to maintain mudular application, but I think more important is fact, that is also easier to maintain applications code when its devided into modules.
+I created this short paper to sumerize my knowledge about DLL and DLL Injection in one place. Its much easier to exploit something from time to time when you don't have to remind every detail again and agian :). There is no fancy stuff, the idea was to create general guide to help myself when I came across DLL Injection in the future. 
 
 ## 1. What is a DLL?
 
 As we can read on [oficial microsoft page](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/dynamic-link-library#more-information) - "a DLL is a library that contains code and data that can be used by more than one program at the same time". It's more eficient to place your code in DLL when you know it will be used in multiple places. Unlike static libraries that are embedded into an executable at compile time, DLL will be loaded when particular function is called inside the code.
 
+Applications can be devided into multiple modules, each module have its seperate DLL file, which is loaded seperatly when main application (.exe file) requires it. It is more eficient for system to maintain mudular application, but I think more important is fact, that is also easier to maintain applications code when its devided into modules.
 
 ### 1.2 Structure and Portable Executable (PE) Format
 
@@ -22,34 +21,73 @@ Great visualization was done in the picture below, where simple.exe was describe
 
 ![pic](../_screenshots/pe101.png)
 
-
 Understading of how the PE format is build and works is whole other topic. 0xRick on his blog explained in details how PE format is stucture so you can find more information there - [Dive into PE Format](https://0xrick.github.io/win-internals/pe1/)
 
 ---
 
 ## 2. Detection Mechanisms: Procmon and Process Explorer
 
-### 2.1 Process Monitor (Procmon)
-
-**Process Monitor (Procmon)** is a real-time Windows system monitoring tool from Sysinternals that captures system calls, registry operations, and file I/O operations. For DLL-related troubleshooting:
-
-**Detecting Missing DLLs**:
-Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is function for filtering events, to reduce the number of displayed rows. 
-
-As an example, we will inwestigate service that is running with SYSTEM privileges. It is a PoC service, so only importat thing it does, it tries to load DLL using `LoadLibraryA" every 5 seconds.
-```
+First, we need an example of the user application, service, and other program that does not work as standalone application, it needs to load aditional modules - DLL binaries. For that purpose we will use simple service (run with the highest privileges - NT AUTHORITY\SYSTEM). It is a PoC service, so the only importat thing it does, it tries to load DLL using `LoadLibraryA" every 5 seconds.
+```C
 while (true) {
     HMODULE hModule = LoadLibraryA("vulnerable.dll");
 
     Sleep(5000);
 }
 ```
+When the program was compiled successfuly, it was added as new service:
+![new service](../_screenshots/service-create.png)
+
+### 2.1 Process Monitor (Procmon)
+
+**Process Monitor (Procmon)** is a real-time Windows system monitoring tool from Sysinternals that captures system calls, registry operations, and file I/O operations.
+
+**Detecting Missing DLLs**:
+Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is function for filtering events, to reduce the number of displayed rows. 
+
+As an example, we will inwestigate service that is running with SYSTEM privileges. 
+
 Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary we want to see:
 
+#Obrazek z filtrami
+As you can see I already added one more filter, it cuts the results to only those "NAME NOT FOUND", which means that it will display rows where file was not found in the selected directory.
 
 ##### Search order
 
-#TODO Example Create example in the virtual machine, to the screnshoots etc.
+In the source code only name of DLL was specified and application, because of that, system will try to find the binary in multiple places. Search order differs if the "Safe DLL Search Mode" is enabled or not, but it is by default enabled on modern systems so its really rarly to find system with this switch turnd off. The search orderd goes as follows:
+
+1. Application's Directory
+The folder where the executable (vuln-service.exe) is located - in this case C:\Temp.
+
+2. System Directory 
+C:\Windows\System32
+
+3. 16-bit System Directory 
+C:\Windows\System
+
+4. Windows Directory C:\Windows
+Use GetWindowsDirectory to find this.
+
+5. Current Working Directory
+The process's current directory (which might be different from the app directory).
+
+6. PATH Environment Variable
+All directories listed in the system's %PATH% variable, searched in the order they appear.
+
+The search stops imiditly, when application finds the desired DLL. Looking at the list above, most often normal user will not have write permissions on both System Directories, nor C:\Windows, so the best shot is Application's Directory, Current Working Directory if it is different then others and PATH. 
+In this example, the service was created in the C:\Windows\System32 directory, so the Current Working Directory is set to that value. 
+
+##### Path
+
+Every user on Windows operating system has its own `PATH`. It contains `Path` from users variables and System variables. First can be edited by user it self, but to edit the system variables user required administrative privileges. The reason is very simple, because System variables targets all users. 
+
+Using Path, user user can have easy access to the binaries using Powershell - e.g. typing just `powershell` instead of `C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe`.
+
+There is one more important place on the system, where part of the Path is definied -  `Computer\HKEY_USERS\.DEFAULT\Environment` in the Registry. Every user on the system inherits Path in that registry. So the whole Path contains:
+1. Path definied in **System variables**
+2. Path inherited from 'default' user profile - `Computer\HKEY_USERS\.DEFAULT\Environment`
+3. All aditional directories added to the particular Path in **User variables**
+
 
 ### 2.2 Process Explorer
 
