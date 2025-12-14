@@ -43,9 +43,7 @@ When the program was compiled successfuly, it was added as new service:
 **Process Monitor (Procmon)** is a real-time Windows system monitoring tool from Sysinternals that captures system calls, registry operations, and file I/O operations.
 
 **Detecting Missing DLLs**:
-Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is function for filtering events, to reduce the number of displayed rows. 
-
-As an example, we will inwestigate service that is running with SYSTEM privileges. 
+Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is a function for filtering events, to reduce the number of displayed rows.  As an example, we will inwestigate service that is running with SYSTEM privileges. 
 
 Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary we want to see:
 
