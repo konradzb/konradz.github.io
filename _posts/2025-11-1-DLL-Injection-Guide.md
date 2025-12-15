@@ -77,6 +77,7 @@ In this example, the service was created in the C:\Windows\System32 directory, s
 
 ##### Path
 
+
 Every user on Windows operating system has its own `PATH`. It contains `Path` from users variables and System variables. First can be edited by user it self, but to edit the system variables user required administrative privileges. The reason is very simple, because System variables targets all users. 
 
 Using Path, user user can have easy access to the binaries using Powershell - e.g. typing just `powershell` instead of `C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe`.
