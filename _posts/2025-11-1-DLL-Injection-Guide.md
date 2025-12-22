@@ -45,13 +45,13 @@ When the program was compiled successfuly, it was added as new service:
 **Detecting Missing DLLs**:
 Procmon captures all events that happens on the system, which can be overlaming at first, when we first time open the program. That is why there is a function for filtering events, to reduce the number of displayed rows.  As an example, we will inwestigate service that is running with SYSTEM privileges. 
 
-Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary we want to see:
+Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary (Process Name) we want to see. 
 
 ![filters](../_screenshots/procmon1.1.png)
 
 As you can see I already added one more filter, it cuts the results to only those "NAME NOT FOUND", which means that it will display rows where file was not found in the selected directory.
 
-##### Search order
+### Search order
 
 In the source code only name of DLL was specified and application, because of that, system will try to find the binary in multiple places. Search order differs if the "Safe DLL Search Mode" is enabled or not, but it is by default enabled on modern systems so its really rarly to find system with this switch turnd off. The search orderd goes as follows:
 
@@ -78,20 +78,32 @@ All directories listed in the system's %PATH% variable, searched in the order th
 The search stops imiditly, when application finds the desired DLL. Looking at the list above, most often normal user will not have write permissions on both System Directories, nor C:\Windows, so the best shot is Application's Directory, Current Working Directory if it is different then others and PATH. 
 In this example, the service was created in the C:\Windows\System32 directory, so the Current Working Directory is set to that value. 
 
-##### Path
+### Path
 
-Every user on Windows operating system has its own `PATH`. It contains `Path` from users variables and System variables. First can be edited by user itself, but to edit the system variables user required administrative privileges. The reason behind this is very simple, because System variables target all users. 
+Every user on a Windows operating system has their own **PATH** environment variable. It combines the user-specific PATH and the system-wide PATH. The user PATH can be edited by the user themselves, while editing the system PATH requires administrative privileges because system variables apply to all users on the machine.
 
-Using Path, user user can have easy access to the binaries using Powershell - e.g. typing just `powershell` instead of `C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe`.
+Using PATH, a user can easily run programs without typing their full paths. For example, instead of entering  
+`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`, the user can simply type `powershell` in the console.
 
-There is one more important place on the system, where initial part of the Path is definied -  `Computer\HKEY_USERS\.DEFAULT\Environment` in the Registry. Every user on the system inherits Path in that registry. Important thing is that, after changing default PATH value, will not change PATH for every user, but every newly created user will inherit edited value.
+The system-wide PATH is stored in the registry under:  
+`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`  
+
+The per-user PATH is stored under:  
+`HKEY_CURRENT_USER\Environment` for each specific user.
 
 
+> **NOTE:** There is one more important place on the system - `Computer\HKEY_USERS\.DEFAULT\Environment` in the Registry. It stores environment variables for the default system session used by the Winlogon process (login screen), processes running before user logon, and services executing as LocalSystem (NT AUTHORITY\SYSTEM). Important note - it is NOT a template for new users, NOT inherited by new user profiles for PATH, and does NOT affect existing users.
 
-So the whole Path contains:
-1. Path definied in **System variables**
-2. Path inherited from 'default' user profile - `Computer\HKEY_USERS\.DEFAULT\Environment`
-3. All aditional directories added to the particular Path in **User variables**
+New user profiles are initialized from the **Default User** profile (`C:\Users\Default`), whose registry hive is loaded when the account is created, and then combined with the system PATH.
+
+**The effective PATH for a given user consists of:**
+
+- System PATH from `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`
+- User PATH from `HKEY_CURRENT_USER\Environment`
+
+These two parts are merged by Windows to form the complete PATH for that user's session.
+
+![path](../_screenshots/pathh.png)
 
 
 ### 2.2 Process Explorer
