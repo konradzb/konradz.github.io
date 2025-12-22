@@ -27,7 +27,7 @@ Understading of how the PE format is build and works is whole other topic. 0xRic
 
 ## 2. Detection Mechanisms: Procmon and Process Explorer
 
-First, we need an example of the user application, service, and other program that does not work as standalone application, it needs to load aditional modules - DLL binaries. For that purpose we will use simple service (run with the highest privileges - NT AUTHORITY\SYSTEM). It is a PoC service, so the only importat thing it does, it tries to load DLL using `LoadLibraryA" every 5 seconds.
+First, we will need an example of the application that does not work as standalone application and loads aditional modules - DLL binaries. For that purpose we will use simple service (run with the highest privileges - NT AUTHORITY\SYSTEM). It is a PoC service, so the only importat thing it does, it tries to load DLL using `LoadLibraryA" every 5 seconds.
 ```C
 while (true) {
     HMODULE hModule = LoadLibraryA("vulnerable.dll");
@@ -47,7 +47,8 @@ Procmon captures all events that happens on the system, which can be overlaming 
 
 Moving on into the ProcMon itself, when first time open up, it starts printing thounsds of events every second. To lower that number we can use filters and only target the binary we want to see:
 
-#Obrazek z filtrami
+![filters](../_screenshots/procmon1.1.png)
+
 As you can see I already added one more filter, it cuts the results to only those "NAME NOT FOUND", which means that it will display rows where file was not found in the selected directory.
 
 ##### Search order
@@ -72,17 +73,22 @@ The process's current directory (which might be different from the app directory
 6. PATH Environment Variable
 All directories listed in the system's %PATH% variable, searched in the order they appear.
 
+![search order](../_screenshots/search4.png)
+
 The search stops imiditly, when application finds the desired DLL. Looking at the list above, most often normal user will not have write permissions on both System Directories, nor C:\Windows, so the best shot is Application's Directory, Current Working Directory if it is different then others and PATH. 
 In this example, the service was created in the C:\Windows\System32 directory, so the Current Working Directory is set to that value. 
 
 ##### Path
 
-
-Every user on Windows operating system has its own `PATH`. It contains `Path` from users variables and System variables. First can be edited by user it self, but to edit the system variables user required administrative privileges. The reason is very simple, because System variables targets all users. 
+Every user on Windows operating system has its own `PATH`. It contains `Path` from users variables and System variables. First can be edited by user itself, but to edit the system variables user required administrative privileges. The reason behind this is very simple, because System variables target all users. 
 
 Using Path, user user can have easy access to the binaries using Powershell - e.g. typing just `powershell` instead of `C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe`.
 
-There is one more important place on the system, where part of the Path is definied -  `Computer\HKEY_USERS\.DEFAULT\Environment` in the Registry. Every user on the system inherits Path in that registry. So the whole Path contains:
+There is one more important place on the system, where initial part of the Path is definied -  `Computer\HKEY_USERS\.DEFAULT\Environment` in the Registry. Every user on the system inherits Path in that registry. Important thing is that, after changing default PATH value, will not change PATH for every user, but every newly created user will inherit edited value.
+
+
+
+So the whole Path contains:
 1. Path definied in **System variables**
 2. Path inherited from 'default' user profile - `Computer\HKEY_USERS\.DEFAULT\Environment`
 3. All aditional directories added to the particular Path in **User variables**
