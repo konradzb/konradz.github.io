@@ -35,6 +35,8 @@ while (true) {
     Sleep(5000);
 }
 ```
+In `LoadLibraryA` path to DLL is not provided, just name of the DLL, so the application will search in the current directory. Another way to specify targeted DLL is to specify the whole path, e.g. `C:\Temp\vulnerable.dll`. How is it done depends on the application.
+
 When the program was compiled successfuly, it was added as new service:
 ![new service](../_screenshots/service-create.png)
 
@@ -108,29 +110,55 @@ These two parts are merged by Windows to form the complete PATH for that user's 
 
 ### 2.2 Process Explorer
 
-**Process Explorer**, another Sysinternals tool, provides a hierarchical view of running processes with detailed information about loaded DLLs and open files. For DLL analysis:
+**Process Explorer**, another Sysinternals tool, provides a hierarchical view of running processes with detailed information about loaded DLLs and open files. Process Explorer does not provide information about every try of loading DLL binary and because of this we will stick to the **Process monitor**
 
-#TODO compare it on an created example with the process monitor
+![process explorer](../_screenshots/procexplorer.png)
+
 
 ---
 
-## 3. DLL Injection: Mechanism and Execution
+## 3. Custom DLL
 
-### 3.1 Definition
+---
+
+## 4. DLL Injection: Mechanism and Execution
+
+### 4.1 Definition
+
+So far we have general knowledge about what DLL file is, we know how to monitor loaded DLL using Process Monitor and we have prepared our target application - in this case simple service which tries to load DLL file every 5 seconds. Now we can move to the DLL Injection itself, how it works and how to take advantege of it. 
 
 **DLL Injection** is a technique used to introduce a Dynamic Link Library into the address space of a running process, thereby altering the behavior of that process without modifying its original code. The injected DLL executes with the same privileges as the target process and can perform arbitrary operations within that context.
 
-### 2.2 How DLL Injection Works - General overview
+### 4.2 DLL Injection - Attack description
 
 The DLL injection process follows a systematic approach:
 
-1. **Process Identification**: 
+1. **Process Identification**: Using Process Monitor identify which process you want to target. In this case we already have choseen service - `vuln-service.exe` but during regular audit, you want to take your time during that phase. More info about this in #TODO
 
-3. **DLL Path Injection**: The path to the malicious DLL is written into the allocated memory within the target process.
+2. **Process loads DLL**: Wiemy w jaką aplikacje chcemy celować, więc w ProcMon zawężamy scope tylko do tego procesu i patrzymy z jakich ścieżek próbuje łądować DLL.
+![DLL from vulnerable service](../_screenshots/procmon2.png)
 
-4. **Thread Creation**: A remote thread is created within the target process using `CreateRemoteThread()`, instructing it to load the DLL via `LoadLibrary()` or similar functions.
+Chcemy targtować tylko pliki DLL, dlatego w filtrach można zawęzić wyświetlanie rekordów tylko do tych, gdzie Path kończy sie na ".dll". 
+![Only DLLs](../_screenshots/procmon3.png)
 
-5. **Code Execution**: The injected DLL's `DllMain` function is called automatically by the Windows loader, executing the malicious payload.
+
+3. **Path identification**: Jako zwykli użytkownicy nie mamy zapisu w ścieżkach jak `C:\Windows\*` czy `C:\Program Files\*`, zakładając oczywiście, że nikt na systemie nie edytował domyślnych ustawień. Dlatego z powyższych rekordów najwięcej nadzieje daje ten `C:\Temp`, który nie istnieje domyślnie na systemie, dlatego daje nadzieje na podatną konfiguracje.
+
+![C:\Temp permissions](../_screenshots/permissions.png)
+
+Każdy zalogowany członek systemu jest w grupie Authenticated Users, oznacza to że jako nisko uprzywilijowany użytkownik mamy możliwość zapisu w podanej ścieżce.
+
+![Authenticated Users Group confirmation](../_screenshots/permissions2.png)
+
+Na tym etapie wiemy już że podatność występuje, mamy potwierdzenie że wysoko uprziwilejowany process próbuje ładować plik DLL ze ścieżki nad którą niskouprziwlejowany użytkownik ma kontrolę. Teraz potrzebujemy tylko przygotować PoC eskalacji uprawnień, to znaczy stworzyć złośliwy plik DLL i wstawić go w odpowiednie miejsce.
+
+4. **Custom DLL compilation**: #TODO
+
+4. **DLL Path Injection**: 
+
+4. **Execution**: A remote thread is created within the target process using `CreateRemoteThread()`, instructing it to load the DLL via `LoadLibrary()` or similar functions.
+
+
 
 
 ---
@@ -238,6 +266,8 @@ When an application calls `GetFileVersionInfoA`, the Windows loader automaticall
 
 
 
+## 11. Recon, how to identify processes,services, binaries to perform DLL injection
+Zwykle DLL są ładowane podczas startu programu i później podczas wykonywaniu konkretnej akcji, dlatego wymagane jest pewne zrozumienie działania danego programu aby go poprawnie sprawdzić. W przypadku samych serwisów, na pewno łatwiej na początku jest zidentyfikować customowe serwisy, ich ścieżki i od nich dalej próbować zrozumieć dany program. Zaczynanie od Process monitora nie jest zawsze najlepszym rozwiązaniem.
 ---
 
 ## Conclusion
