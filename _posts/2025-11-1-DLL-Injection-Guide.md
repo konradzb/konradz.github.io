@@ -119,10 +119,11 @@ These two parts are merged by Windows to form the complete PATH for that user's 
 
 ## 3. Custom DLL
 Before we dive into execution of DLL Injection itself, we will need our malicious DLL, which will be executed during the attack. There are many different aproches on to how to generate that DLL, but for now we will stick to the most basic one. 
-Open Visual Studio and create new DLL project
+Open Visual Studio and create new DLL project.
 
 ![new custom DLL](../_screenshots/new-dll-project.png)
 
+This DLL will fire up new CMD process 
 ---
 
 ## 4. DLL Injection: Mechanism and Execution
